@@ -1,49 +1,23 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    env:
-      NODE_ENV: development
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps
-      - name: Prebuild Native Android
-        run: npx expo prebuild --platform android --clean
-      - name: Inject Android UI Resources, MinSDK 24 & Background Service
-        run: |
-          echo "" >> android/gradle.properties
-          echo "android.minSdkVersion=24" >> android/gradle.properties
-          sed -i 's/23/24/g' android/build.gradle
-          
-          # Create missing Android UI resource values (fixes colorPrimary and splashscreen errors)
-          mkdir -p android/app/src/main/res/values
-          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="colorPrimary">#10B981</color><color name="splashscreen_background">#090D16</color></resources>' > android/app/src/main/res/values/colors.xml
-          echo '<?xml version="1.0" encoding="utf-8"?><resources><style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="colorPrimary">@color/colorPrimary</item><item name="colorPrimaryDark">@color/colorPrimary</item></style></resources>' > android/app/src/main/res/values/styles.xml
-
-          # Inject Background Service & LiveKit native setup
-          sed -i 's|</application>|<service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="microphone\|mediaPlayback" android:exported="false" /></application>|g' android/app/src/main/AndroidManifest.xml
-          sed -i 's/super.onCreate()/super.onCreate()\n    com.livekit.reactnative.LiveKitReactNative.setup(this)/g' android/app/src/main/java/com/vox/walkietalkie/MainApplication.kt
-      - name: Build APK
-        working-directory: ./android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: VOX-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+{
+  "name": "vox-walkie-talkie",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android"
+  },
+  "dependencies": {
+    "expo": "~51.0.0",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "@livekit/react-native": "^2.4.0",
+    "@livekit/react-native-webrtc": "^125.0.2",
+    "livekit-client": "^2.5.0",
+    "react-native-background-actions": "^4.0.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0"
+  },
+  "private": true
+}
