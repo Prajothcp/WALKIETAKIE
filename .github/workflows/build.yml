@@ -21,9 +21,11 @@ jobs:
         run: npm install --legacy-peer-deps
       - name: Prebuild Native Android
         run: npx expo prebuild --platform android --clean
-      - name: Add Background Service to Manifest
+      - name: Configure Native Audio & Background Service
         run: |
           sed -i 's|</application>|<service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="microphone\|mediaPlayback" android:exported="false" /></application>|g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/super.onCreate()/super.onCreate()\n    com.livekit.reactnative.LiveKitReactNative.setup(this)/g' android/app/src/main/java/com/vox/walkietalkie/MainApplication.kt
+          echo "android.enableDexingArtifactTransform.desugaring=false" >> android/gradle.properties
       - name: Build APK
         working-directory: ./android
         run: |
