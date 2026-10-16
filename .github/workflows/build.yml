@@ -23,11 +23,13 @@ jobs:
         run: npm install --legacy-peer-deps
       - name: Prebuild Native Android
         run: npx expo prebuild --platform android --clean
-      - name: Configure Native Audio, MinSDK 24 & Background Service
+      - name: Fix Missing Resources, MinSDK 24 & Background Service
         run: |
           echo "" >> android/gradle.properties
           echo "android.minSdkVersion=24" >> android/gradle.properties
           sed -i 's/23/24/g' android/build.gradle
+          mkdir -p android/app/src/main/res/values
+          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="splashscreen_background">#090D16</color></resources>' > android/app/src/main/res/values/colors.xml
           sed -i 's|</application>|<service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="microphone\|mediaPlayback" android:exported="false" /></application>|g' android/app/src/main/AndroidManifest.xml
           sed -i 's/super.onCreate()/super.onCreate()\n    com.livekit.reactnative.LiveKitReactNative.setup(this)/g' android/app/src/main/java/com/vox/walkietalkie/MainApplication.kt
       - name: Build APK
