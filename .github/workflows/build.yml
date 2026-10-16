@@ -23,13 +23,18 @@ jobs:
         run: npm install --legacy-peer-deps
       - name: Prebuild Native Android
         run: npx expo prebuild --platform android --clean
-      - name: Fix Missing Resources, MinSDK 24 & Background Service
+      - name: Inject Android UI Resources, MinSDK 24 & Background Service
         run: |
           echo "" >> android/gradle.properties
           echo "android.minSdkVersion=24" >> android/gradle.properties
           sed -i 's/23/24/g' android/build.gradle
+          
+          # Create missing Android UI resource values (fixes colorPrimary and splashscreen errors)
           mkdir -p android/app/src/main/res/values
-          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="splashscreen_background">#090D16</color></resources>' > android/app/src/main/res/values/colors.xml
+          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="colorPrimary">#10B981</color><color name="splashscreen_background">#090D16</color></resources>' > android/app/src/main/res/values/colors.xml
+          echo '<?xml version="1.0" encoding="utf-8"?><resources><style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar"><item name="colorPrimary">@color/colorPrimary</item><item name="colorPrimaryDark">@color/colorPrimary</item></style></resources>' > android/app/src/main/res/values/styles.xml
+
+          # Inject Background Service & LiveKit native setup
           sed -i 's|</application>|<service android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask" android:foregroundServiceType="microphone\|mediaPlayback" android:exported="false" /></application>|g' android/app/src/main/AndroidManifest.xml
           sed -i 's/super.onCreate()/super.onCreate()\n    com.livekit.reactnative.LiveKitReactNative.setup(this)/g' android/app/src/main/java/com/vox/walkietalkie/MainApplication.kt
       - name: Build APK
